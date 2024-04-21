@@ -55,7 +55,7 @@ if __name__ == '__main__':
     for i in texts:
         replace_nums.append(i.split('|', 1))
 
-    nums2word = [re.sub('(\d+)', lambda m: num2words(m.group(), lang='kz'), sentence) for sentence in np.array(replace_nums)[:, 0]]
+    nums2word = [re.sub('(\d+)', lambda m: num2words(m.group(), lang='en'), sentence) for sentence in np.array(replace_nums)[:, 0]]
     # Speakers id.
     # M1 = 0
     # F1 = 1
