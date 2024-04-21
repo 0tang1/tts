@@ -45,8 +45,8 @@ if __name__ == '__main__':
     _ = vocoder.cuda().eval()
     vocoder.remove_weight_norm()
 
-    emos = sorted(["angry", "surprise", "fear", "happy", "neutral", "sad"])
-    speakers = ['M1', 'F1', 'M2']
+    emos = ["angry", "happy", "neutral", "sad", "suprise"]
+    speakers = ['0011', '0012']
 
     with open(args.file, 'r', encoding='utf-8') as f:
         texts = [line.strip() for line in f.readlines()]
@@ -56,10 +56,7 @@ if __name__ == '__main__':
         replace_nums.append(i.split('|', 1))
 
     nums2word = [re.sub('(\d+)', lambda m: num2words(m.group(), lang='en'), sentence) for sentence in np.array(replace_nums)[:, 0]]
-    # Speakers id.
-    # M1 = 0
-    # F1 = 1
-    # M2 = 2
+    
     text2speech = []
     for i, j in zip(nums2word, np.array(replace_nums)[:, 1]):
         text2speech.append(f'{i}|{j}')
