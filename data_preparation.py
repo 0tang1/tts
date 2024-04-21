@@ -13,6 +13,7 @@ import re
 from melspec import mel_spectrogram
 import torchaudio
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--data', type=str, required=True, help='path to the emotional dataset')
@@ -23,24 +24,47 @@ if __name__ == '__main__':
     feats_ark_file = filelists_path + 'feats.ark'
 
 
-    spks = ['1263201035', '805570882', '399172782']
+    # storing speaker Ids
+    spks = []
+    for spk in os.listdir(dataset_path):
+        spks.append(spk)
+    print(f"spks:{spks}")
+    
     train_files = []
     eval_files = []
-    for spk in spks:
-        train_files += glob.glob(dataset_path + spk + "/train/*.wav")
-        eval_files += glob.glob(dataset_path + spk + "/eval/*.wav")
 
+    wavs = [] #storing all the paths for wav files
+
+    # storing training and validation paths
+    for spk in spks:
+        
+        train_wavs = glob.glob(os.path.join(dataset_path, spk, "train", "*.wav"))
+        eval_wavs = glob.glob(os.path.join(dataset_path, spk, "eval", "*.wav")) 
+
+        train_files.extend(train_wavs)
+        eval_files.extend(eval_wavs)
+
+        wavs.extend(train_wavs)
+        wavs.extend(eval_wavs)
+
+   
     os.makedirs(filelists_path, exist_ok=True)
 
-    with open(filelists_path + 'train_utts.txt', 'w', encoding='utf-8') as f:
+    # Create txt file storing the file names of wav. wav name “speakerid_emotion_utterance”
+    train_utts_path = os.path.join(filelists_path, 'train_utts.txt')
+    with open(train_utts_path, 'w', encoding='utf-8') as f:
         for wav_path in train_files:
             wav_name = os.path.splitext(os.path.basename(wav_path))[0]
+            
             f.write(wav_name + '\n')
-    with open(filelists_path + 'eval_utts.txt', 'w', encoding='utf-8') as f:
+    eval_utts_path = os.path.join(filelists_path, 'eval_utts.txt')
+    with open(eval_utts_path, 'w', encoding='utf-8') as f:
         for wav_path in eval_files:
             wav_name = os.path.splitext(os.path.basename(wav_path))[0]
+            
             f.write(wav_name + '\n')
 
+    # creating mel spectrogram
     with open(feats_scp_file, 'w') as feats_scp, \
         kaldiio.WriteHelper(f'ark,scp:{feats_ark_file},{feats_scp_file}') as writer:
         for root, dirs, files in os.walk(dataset_path):
@@ -57,52 +81,52 @@ if __name__ == '__main__':
                     writer[wav_name] = spec
     
 
+    # emotion is the 2nd element of the file name
     emotions = [os.path.basename(x).split("_")[1] for x in glob.glob(dataset_path + '/**/**/*')]
     emotions = sorted(set(emotions))
 
+    # wave_name “speakerid_emotion_utterance” is the key，and emotion，spk are the values
     utt2spk = {}
     utt2emo = {}
-    wavs = glob.glob(dataset_path + '**/**/*.wav')
+    
+    print(f"Found {len(wavs)} .wav files.")
+
     for wav_path in tqdm(wavs):
         wav_name = os.path.splitext(os.path.basename(wav_path))[0]
         emotion =  emotions.index(wav_name.split("_")[1])
-        if wav_path.split('/')[-3] == '1263201035':
-            spk = 0 ## labels should start with 0
-        elif wav_path.split('/')[-3] == '805570882':
-            spk = 1
-        else:
-            spk = 2
+
+        speaker = wav_name.split("_")[0]
+        spk = spks.index(speaker)
+
         utt2spk[wav_name] = str(spk)
         utt2emo[wav_name] = str(emotion)
     utt2spk = dict(sorted(utt2spk.items()))
     utt2emo = dict(sorted(utt2emo.items()))
+    print("Size of utt2spk:", len(utt2spk))
 
     with open(filelists_path + 'utt2emo.json', 'w') as fp:
         json.dump(utt2emo, fp,  indent=4)
     with open(filelists_path + 'utt2spk.json', 'w') as fp:
         json.dump(utt2spk, fp,  indent=4) 
-    
-    txt_files = sorted(glob.glob(dataset_path + '/**/**/*.txt'))
-    count = 0
-    txt = []
-    basenames = []
-    utt2text = {}
-    flag = False
-    with open(filelists_path + 'text', 'w', encoding='utf-8') as write:
-        for txt_path in txt_files:
-            basename = os.path.basename(txt_path).replace('.txt', '')
-            with open(txt_path, 'r', encoding='utf-8') as f:
-                txt.append(_clean_text(f.read().strip("\n"), cleaner_names=["kazakh_cleaners"]).replace("'", ""))
-                basenames.append(basename) 
-    output_string = [re.sub('(\d+)', lambda m: num2words(m.group(), lang='kz'), sentence) for sentence in txt]
-    cleaned_txt = []
-    for t in output_string:
-        cleaned_txt.append(''.join([s for s in t if s in symbols]))               
-    utt2text = {basenames[i]: cleaned_txt[i] for i in range(len(cleaned_txt))}
-    utt2text = dict(sorted(utt2text.items()))
 
-    vocab = set()
+    
+    # text file storing the wav name “speakerid_emotion_utterance” sentence
+    txt_files = sorted(glob.glob(dataset_path + '/**/*.txt'))
+    combined_lines = []
+
+    for txt_file in sorted(glob.glob(os.path.join(dataset_path, '**/*.txt'), recursive=True)):
+        speaker_id = os.path.basename(os.path.dirname(txt_file))  # Extract the speaker ID from the parent directory name
+        with open(txt_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.strip():  
+                    parts = line.strip().split("\t")  
+                    utterance_id, text, emotion = parts
+                    # Extract the utterance number and rebuild the utterance ID
+                    utterance_number = utterance_id.split('_')[-1]
+                    new_utterance_id = f"{speaker_id}_{emotion.lower()}_{utterance_number}"
+                    combined_line = f"{new_utterance_id}\t{text}\n"
+                    combined_lines.append(combined_line)
+
     with open(filelists_path + '/text', 'w', encoding='utf-8') as f:
-        for x, y in utt2text.items():
-            for c in y: vocab.add(c)
-            f.write(x + ' ' +  y + '\n')
+        for line in combined_lines:
+            f.write(line)
