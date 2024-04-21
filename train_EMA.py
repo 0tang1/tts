@@ -11,6 +11,8 @@ from utils_data import plot_tensor, save_plot
 from model.utils import fix_len_compatibility
 from text.symbols import symbols
 import utils_data as utils
+import os
+
 
 
 class ModelEmaV2(torch.nn.Module):
@@ -50,6 +52,7 @@ if __name__ == "__main__":
 
     print('Initializing logger...')
     log_dir = hps.model_dir
+    print(f"model_dir: {log_dir}")
     logger = SummaryWriter(log_dir=log_dir)
 
     train_dataset, collate, model = utils.get_correct_class(hps)
@@ -84,7 +87,7 @@ if __name__ == "__main__":
         save_plot(mel.squeeze(), f'{log_dir}/original_{i}.png')
 
     try:
-        model, optimizer, learning_rate, epoch_logged = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "grad_*.pt"), model, optimizer)
+        model, optimizer, learning_rate, epoch_logged = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "EMA_grad_*.pt"), model, optimizer)
         epoch_start = epoch_logged + 1
         print(f"Loaded checkpoint from {epoch_logged} epoch, resuming training.")
         global_step = epoch_logged * (len(train_dataset)/hps.train.batch_size)
@@ -95,6 +98,7 @@ if __name__ == "__main__":
         learning_rate = hps.train.learning_rate
 
     ema_model = ModelEmaV2(model, decay=0.9999)  # It's necessary that we put this after loading model.
+
 
     print('Start training...')
     used_items = set()
@@ -202,6 +206,19 @@ if __name__ == "__main__":
 
         ckpt = model.state_dict()
 
-        utils.save_checkpoint(ema_model, optimizer, learning_rate, epoch, checkpoint_path=f"{log_dir}/EMA_grad_{epoch}.pt")
-        utils.save_checkpoint(model, optimizer, learning_rate, epoch, checkpoint_path=f"{log_dir}/grad_{epoch}.pt")
+        ema_checkpoint_path = f"{log_dir}/EMA_grad_{epoch}.pt"
+        model_checkpoint_path = f"{log_dir}/grad_{epoch}.pt"
+
+        if os.path.exists(ema_checkpoint_path):
+            print(f"Confirmed: EMA checkpoint file exists at {ema_checkpoint_path}")
+        else:
+            print(f"Warning: No EMA checkpoint file found at {ema_checkpoint_path}")
+
+        if os.path.exists(model_checkpoint_path):
+            print(f"Confirmed: Model checkpoint file exists at {model_checkpoint_path}")
+        else:
+            print(f"Warning: No Model checkpoint file found at {model_checkpoint_path}")
+
+        utils.save_checkpoint(ema_model, optimizer, learning_rate, epoch, checkpoint_path=ema_checkpoint_path)
+        utils.save_checkpoint(model, optimizer, learning_rate, epoch, checkpoint_path=model_checkpoint_path)
 
