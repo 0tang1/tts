@@ -24,7 +24,7 @@ if __name__ == '__main__':
     feats_ark_file = filelists_path + 'feats.ark'
 
 
-    # 写一个loop存 speaker id
+    # storing speaker id
     spks = []
     for spk in os.listdir(dataset_path):
         spks.append(spk)
@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     wavs = [] #storing all the paths for wav files
 
-    # 存train和test的directory
+    # storing train and eval directories
     for spk in spks:
         
         train_wavs = glob.glob(os.path.join(dataset_path, spk, "train", "*.wav"))
@@ -50,7 +50,7 @@ if __name__ == '__main__':
    
     os.makedirs(filelists_path, exist_ok=True)
 
-    # Create txt file storing the file names of wav，因为原始wav name “speakerid_emotion_utterance”
+    # Create txt file storing the file names of wav，wav name “speakerid_emotion_utterance”
     train_utts_path = os.path.join(filelists_path, 'train_utts.txt')
     with open(train_utts_path, 'w', encoding='utf-8') as f:
         for wav_path in train_files:
@@ -64,7 +64,7 @@ if __name__ == '__main__':
             
             f.write(wav_name + '\n')
 
-    # 转成spectrogram
+    # creating spectrogram
     with open(feats_scp_file, 'w') as feats_scp, \
         kaldiio.WriteHelper(f'ark,scp:{feats_ark_file},{feats_scp_file}') as writer:
         for root, dirs, files in os.walk(dataset_path):
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     emotions = [os.path.basename(x).split("_")[1] for x in glob.glob(dataset_path + '/**/**/*')]
     emotions = sorted(set(emotions))
 
-    # 根据wave_name “speakerid_emotion_utterance” 作为key，emotion，spk作为values
+    
     utt2spk = {}
     utt2emo = {}
     
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     with open(filelists_path + 'utt2spk.json', 'w') as fp:
         json.dump(utt2spk, fp,  indent=4) 
 
-    #改！
+    
     # text file storing the wav name “speakerid_emotion_utterance” sentence
     txt_files = sorted(glob.glob(dataset_path + '/**/*.txt'))
     combined_lines = []
