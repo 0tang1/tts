@@ -46,7 +46,7 @@ if __name__ == '__main__':
     vocoder.remove_weight_norm()
 
     emos = ["angry", "happy", "neutral", "sad", "suprise"]
-    speakers = ['0011', '0012']
+    speakers = ['0012', '0011']
 
     with open(args.file, 'r', encoding='utf-8') as f:
         texts = [line.strip() for line in f.readlines()]
