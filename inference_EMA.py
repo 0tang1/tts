@@ -21,6 +21,7 @@ from model import GradTTSWithEmo
 import utils_data as utils
 from attrdict import AttrDict
 from models import Generator as HiFiGAN
+from text import _clean_text, symbols
 
 
 HIFIGAN_CONFIG = './configs/hifigan-config.json'
@@ -52,14 +53,24 @@ if __name__ == '__main__':
         texts = [line.strip() for line in f.readlines()]
 
     replace_nums = []
+    cleaned_text = []
+
     for i in texts:
         replace_nums.append(i.split('|', 1))
-
-    nums2word = [re.sub('(\d+)', lambda m: num2words(m.group(), lang='en'), sentence) for sentence in np.array(replace_nums)[:, 0]]
+    for t in replace_nums:
+        text = _clean_text(t[0], cleaner_names=["english_cleaners"]).replace("'", "")
+        #print(text)
+        cleaned_text.append(text)
     
+
+
+
+    nums2word = [re.sub('(\d+)', lambda m: num2words(m.group(), lang='en'), sentence) for sentence in cleaned_text]
+   
     text2speech = []
     for i, j in zip(nums2word, np.array(replace_nums)[:, 1]):
         text2speech.append(f'{i}|{j}')
+
 
     for i, line in enumerate(text2speech):
         emo_i = int(line.split('|')[1])
@@ -81,6 +92,15 @@ if __name__ == '__main__':
         y_g_hat = vocoder(x)
         audio = y_g_hat.squeeze()
         audio = audio * 32768.0
-        audio = audio.detach().cpu().numpy().astype('int16')
-        audio = AudioSegment(audio.data, frame_rate=22050, sample_width=2, channels=1)
-        audio.export(f'{args.generated_path}/{emos[emo_i]}_{speakers[int(line.split("|")[2])]}.wav', format="wav")
+        audio_np = audio.detach().cpu().numpy().astype('int16')
+
+   
+        padding_duration_seconds = 1  # One second of silence
+        samples_to_pad = 22050 * padding_duration_seconds
+
+
+        padding = np.zeros(samples_to_pad, dtype='int16')
+
+        padded_audio_np = np.concatenate((padding, audio_np))
+        audio_segment = AudioSegment(padded_audio_np.tobytes(), frame_rate=16000, sample_width=2, channels=1)
+        audio_segment.export(f'{args.generated_path}/{emos[emo_i]}_{speakers[int(line.split("|")[2])]}.wav', format="wav")
