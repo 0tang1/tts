@@ -18,7 +18,33 @@ data/
 │   └── val/
 │       └── [speaker_id][emotion]_[utterance_id].wav - Validation audio files.
 ```
+### Data Preprocessing
+
+Setup the environment
+
+`conda create -n <env name> python=3.9`
+
+`conda activate <env name>`
+
+Download the nescessary packages
+
+`conda install emotion_env.yml`
+
+`pip install pip_packages.txt`
+
+Run the following command
+
+`python data_preparation.py -d <Your Dataset>`
+
+## Training the GradTTS model
+
+`python train_EMA.py -c configs/train_grad.json -m checkpoint`
+
 ## Script Generation
 
+`python script_gen.py --topic <your topic>`
+
 ## Podcast Generation
+
+`python inference_EMA.py -c configs/train_grad.json -m checkpoint -t <Number of epochs>  -f <script directory> -r <output directory>`
 
