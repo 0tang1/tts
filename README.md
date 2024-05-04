@@ -42,7 +42,11 @@ Run the following command
 
 ## Script Generation
 
+Here make sure to [set up the OpenAI API key](https://openai.com/blog/openai-api) and store it as the `OPENAI_API_KEY` varaible in the bash profile, before running the following code.
+
 `python script_gen.py --topic <your topic>`
+
+The script will be stored as `emotion.txt`
 
 ## Podcast Generation
 
