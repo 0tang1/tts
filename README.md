@@ -2,6 +2,8 @@ This repository is a fork from IS2AI/KazEmoTTS.
 
 Our ultimate goal is to generate emotionally expressive podcast audio. Below, you'll find step-by-step instructions to replicate our code.
 
+Our example Podcast output can be found at output_full.wav
+
 ## Training Data Preparation
 
 Ensure that your data is organized according to the following structure before starting the training process:
