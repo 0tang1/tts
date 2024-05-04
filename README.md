@@ -8,15 +8,16 @@ Ensure that your data is organized according to the following structure before s
 
 ### Directory Structure
 
+```plaintext
 data/
 │
 ├── [speaker_id] (e.g., 0011, 0012, 0013)
-│ ├── [speaker_id].txt - [speaker_id]_[utterance_id] Contains the corresponding sentence.
-│ ├── train/
-│ │ └── [speaker_id][emotion][utterance_id].wav - Training audio files.
-│ └── val/
-│ └── [speaker_id][emotion]_[utterance_id].wav - Validation audio files.
-
+│   ├── [speaker_id].txt - This file contains `[speaker_id]_[utterance_id]` and the corresponding sentence.
+│   ├── train/
+│   │   └── [speaker_id][emotion][utterance_id].wav - Training audio files.
+│   └── val/
+│       └── [speaker_id][emotion]_[utterance_id].wav - Validation audio files.
+```
 ## Script Generation
 
 ## Podcast Generation
