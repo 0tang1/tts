@@ -71,6 +71,7 @@ if __name__ == '__main__':
     for i, j in zip(nums2word, np.array(replace_nums)[:, 1]):
         text2speech.append(f'{i}|{j}')
 
+    combined_audio = []
 
     for i, line in enumerate(text2speech):
         emo_i = int(line.split('|')[1])
@@ -103,4 +104,7 @@ if __name__ == '__main__':
 
         padded_audio_np = np.concatenate((padding, audio_np))
         audio_segment = AudioSegment(padded_audio_np.tobytes(), frame_rate=16000, sample_width=2, channels=1)
-        audio_segment.export(f'{args.generated_path}/{emos[emo_i]}_{speakers[int(line.split("|")[2])]}.wav', format="wav")
+        combined_audio.append(audio_segment)
+    # Concatenate all audio segments into one
+    final_audio_segment = sum(combined_audio)
+    final_audio_segment.export(f'{args.generated_path}/combined_output.wav', format='wav')
